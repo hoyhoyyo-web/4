@@ -396,7 +396,7 @@ audio{width:100%;margin-bottom:8px;accent-color:var(--blue)}
 <script>
 const EMBED_KEY = localStorage.getItem('talktalk_apikey') || '';
 const LS_KEY='talktalk_v3';
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxgCuTlVgF0NzIcpNtk4Hu3Za0CjM_Km264XeDD_eBt1HPwy32j00qb-ucNHKEimFcI/exec';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzqv9w0PcE5RvqAKO3lsUFNraVn0LEAQjCumllkIB_9KVkfA5Hhr5qmHM_OjSm7LGh75Q/exec';
 
 const FREE_TOPICS=[
   {emoji:'👋',label:'자기소개\nMy name is...',prompt:'자신에 대해 소개해봐! 이름, 나이, 좋아하는 것을 영어로 말해봐.',sentences:['Hi! My name is ___.','I am ___ years old.','I like ___ very much.','My favorite ___ is ___.'],goals:['3문장 이상','이름 + 나이','좋아하는 것'],keywords:['My name is','I am','I like']},
@@ -438,15 +438,13 @@ let scChart=null,atChart=null;
 function curList(){return S.mode==='unit'?UNIT_TOPICS:FREE_TOPICS;}
 function loadRecs(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch(e){return[];}}
 function saveRec(r){
-  // localStorage 저장
   const a=loadRecs();a.push(r);localStorage.setItem(LS_KEY,JSON.stringify(a));
-  // Google Sheets 저장
   fetch(SCRIPT_URL,{
     method:'POST',
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({
-      name:r.name, date:r.date, time:r.time, topic:r.topic,
-      score:r.score, evalAvg:r.evalAvg, attempts:r.attempts, timerSec:r.timerSec,
+      name:r.name,date:r.date,time:r.time,topic:r.topic,
+      score:r.score,evalAvg:r.evalAvg,attempts:r.attempts,timerSec:r.timerSec,
       comment:r.comment||'',
       good:(r.feedback?.good||'').slice(0,200),
       improve:(r.feedback?.improve||'').slice(0,200),
@@ -647,7 +645,7 @@ async function getFeedback(){
   const avg=(Object.values(S.scores).reduce((a,b)=>a+b,0)/EVAL_ITEMS.length).toFixed(1);
   const detail=EVAL_ITEMS.map(item=>item.label+': '+S.scores[item.id]+'/5').join(', ');
 
-  const sys='You are an expert English speech coach for Korean 5th graders.\nSCORING(strict,no clustering around 70): 90-100=3+expressions+full sentences, 75-89=2expressions mostly complete, 60-74=1expression short, 40-59=very short or major errors, 20-39=single words, 0-19=no English. Under 5 words=below 45.\nRespond ONLY in this format:\nSCORE: [integer 0-100]\nGOOD: [quote student actual words in quotes, specific praise 2-3 sentences]\nIMPROVE: [exact error fix: wrong->correct, gentle, 1-2 points]\nEXAMPLE: [2 model sentences + Korean translation in parentheses]\nNEXT: [one specific expression to practice next time]\nCHEER: [one energetic Korean encouragement sentence]';
+  const sys='You are an expert English speech coach for Korean 5th graders.\nSCORING(strict,no clustering): 90-100=3+expressions+full sentences, 75-89=2expressions mostly complete, 60-74=1expression short, 40-59=very short/major errors, 20-39=single words, 0-19=no English. Under 5 words=below 45.\nRespond ONLY:\nSCORE: [integer 0-100]\nGOOD: [quote student actual words in quotes, specific praise 2-3 sentences]\nIMPROVE: [exact fix: wrong->correct, gentle, 1-2 points]\nEXAMPLE: [2 model sentences + Korean translation in parentheses]\nNEXT: [one specific expression to practice next]\nCHEER: [one energetic Korean encouragement]';
 
   const usr='Topic: '+topic.emoji+' '+topic.label.replace('\n',' — ')+'\nPrompt: '+topic.prompt+'\nStudent said: "'+(S.transcript||'(음성 없음 — 발화 시도함)')+'"'+'\nAttempts: '+S.attemptCount+'회  Duration: '+S.timerSec+'초\nSelf-eval: '+detail+' (avg: '+avg+'/5)\nComment: "'+(comment||'없음')+'"';
 
@@ -764,18 +762,17 @@ async function renderDash(){
       +'<div class="stat-box"><div class="stat-val" style="color:var(--green)">'+sts.length+'</div><div class="stat-lbl">참여 학생 수</div></div>'
       +'<div class="stat-box"><div class="stat-val" style="color:var(--purple)">'+oa+'</div><div class="stat-lbl">전체 평균 점수</div></div>'
       +'<div class="stat-box"><div class="stat-val" style="color:var(--orange)">'+all.reduce((a,r)=>a+(Number(r['도전횟수'])||0),0)+'</div><div class="stat-lbl">총 도전 횟수</div></div></div>'
-      +'<div class="top-box" style="background:linear-gradient(135deg,#FFFDE7,#FEF3C7);border-color:#F6E05E"><div class="top-box-title" style="color:#744210">🌟 최고 성장 학생</div><div class="top-box-name">'+ts.name+' — '+ts.avgScore+'점 평균</div></div>'
-      +'<div class="top-box" style="background:linear-gradient(135deg,#E6FFFA,#C6F6D5);border-color:#48BB78"><div class="top-box-title" style="color:#276749">💪 가장 많이 도전한 학생</div><div class="top-box-name">'+ta.name+' — 총 '+ta.totalAtt+'회 도전</div></div>'
+      +(ts?'<div class="top-box" style="background:linear-gradient(135deg,#FFFDE7,#FEF3C7);border-color:#F6E05E"><div class="top-box-title" style="color:#744210">🌟 최고 성장 학생</div><div class="top-box-name">'+ts.name+' — '+ts.avgScore+'점 평균</div></div>':'')
+      +(ta?'<div class="top-box" style="background:linear-gradient(135deg,#E6FFFA,#C6F6D5);border-color:#48BB78"><div class="top-box-title" style="color:#276749">💪 가장 많이 도전한 학생</div><div class="top-box-name">'+ta.name+' — 총 '+ta.totalAtt+'회 도전</div></div>':'')
       +'<table class="dash-table"><thead><tr><th>이름</th><th>기록수</th><th>평균점수</th><th>총도전</th></tr></thead><tbody>'
       +sts.sort((a,b)=>b.avgScore-a.avgScore).map(s=>'<tr><td><strong>'+s.name+'</strong></td><td>'+s.count+'회</td><td><strong style="color:var(--blue)">'+s.avgScore+'점</strong></td><td>'+s.totalAtt+'회</td></tr>').join('')
       +'</tbody></table>'
       +'<button class="btn btn-green btn-full" style="margin-top:10px" onclick="renderDash()">🔄 새로고침</button>';
   }catch(e){
-    dash.innerHTML='<div class="empty-state"><div class="empty-icon">😢</div>데이터 로드 실패<br><small>'+e.message+'</small></div>';
+    dash.innerHTML='<div class="empty-state"><div class="empty-icon">😢</div>데이터 로드 실패<br><small>'+e.message+'</small><br><button class="btn btn-blue" style="margin-top:10px;width:auto;padding:8px 16px" onclick="renderDash()">다시 시도</button></div>';
   }
 }
-// 기존 동기 함수 제거용 dummy
-function _renderDash(){
+function _old_renderDash(){
   const all=loadRecs();
   const dash=document.getElementById('dashContent');
   if(!all.length){dash.innerHTML='<div class="empty-state"><div class="empty-icon">👩‍🏫</div>아직 학생 기록이 없어요!</div>';return;}
